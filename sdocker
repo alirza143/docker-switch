@@ -1,0 +1,137 @@
+#!/bin/bash
+# Came from https://github.com/alirza143/sdocker
+# @author: Ali Raza
+# @Email: ali.rza143@gmail.com
+
+COMMAND="ls -lah"
+
+
+GREEN=$(echo -en '\033[00;32m');
+RESTORE=$(echo -en '\033[0m');
+YELLOW=$(echo -en '\033[01;33m');
+RED=$(echo -en '\033[01;31m');
+
+LAMP_SERVICES=("apache2" "elasticsearch" "mysql" "php7.4-fpm" "redis-server");
+lamp_services() {
+	for str in ${LAMP_SERVICES[@]}; do
+		if systemctl --all --type service | grep -q "$str";then
+	    $(sudo service $str $1);
+	    echo "This $str is $1"
+	fi
+	done
+}
+
+IS_DOCKER_RUNNING="";
+
+DOCKER_DIR="www-docker/"
+LIST_ALL_DIR=`ls`;
+
+declare -a arr_Filenames=();
+
+arr_Filenames=($(ls $DOCKER_DIR));
+
+DOCKER_CONTAINER_NAMES=$(docker ps --format '{{.Names}}');
+
+DOCKER_CONTAINER_LAST=$(docker ps --format '{{.Names}}' --last 1);
+
+DOCKER_CONTAINER_DIR_NAME=$(docker ps --format '{{.Names}}' --last 1 | cut -f1 -d"_");
+ACTIVE_DOCKER_CONTAINER="";
+
+
+#START_SERVICES=`sudo service apache2 start && sudo service mysql start &&  sudo service php7.4-fpm start` > /dev/null 2>&1;
+
+STOP_ALL_SERVICES=`sudo service elasticsearch stop && sudo service apache2 stop && sudo service mysql stop && sudo service redis-server stop && sudo service php7.4-fpm stop`;
+
+for key in ${!arr_Filenames[@]}; do
+    	if [[ " ${arr_Filenames[${key}]} " == *" $DOCKER_CONTAINER_DIR_NAME "* ]]; 
+    	then
+    		IS_DOCKER_RUNNING=${arr_Filenames[${key}]};
+    		echo "${key} : ${GREEN}${arr_Filenames[${key}]} (active)${RESTORE}";
+    	else 
+    		echo "${key} : ${Y}${arr_Filenames[${key}]}${RESTORE}";
+    	fi;
+done;
+
+stop_container() {
+    read -r -p "Do you want to ${RED}stop${RESTORE} ${GREEN}${IS_DOCKER_RUNNING}${RESTORE} [y/N]:" answer;
+	if [ "$answer" != "${answer#[Yy]}" ] ;then
+		$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
+		echo "This ${RED}$IS_DOCKER_RUNNING${RESTORE} is stoped";
+		START_SERVICES=`sudo service apache2 start && sudo service mysql start &&  sudo service php7.4-fpm start`;
+		$($START_SERVICES);
+	else
+		echo "You Cannot run both container at the same time: Abort."
+	fi
+}
+
+get_input() {
+	if [ "$IS_DOCKER_RUNNING" != "" ]; then
+		read -r -p "${GREEN}$IS_DOCKER_RUNNING${RESTORE} is Running, Select Another Docker Container: " DIR_OF_DOCKER;
+	else
+		read -r -p "Select Docker Container: " DIR_OF_DOCKER;
+	fi;
+    
+    if [ -n "$DIR_OF_DOCKER" ];
+	then 
+    	if [[ -v arr_Filenames[$DIR_OF_DOCKER] ]];
+    		then
+    		if [ "$IS_DOCKER_RUNNING" != "" ]; then
+			$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
+			echo "${RED}$IS_DOCKER_RUNNING${RESTORE} is stoped";
+		fi;
+    		lamp_services stop;$(cd $DOCKER_DIR${arr_Filenames[DIR_OF_DOCKER]}; docker-compose up -d --remove-orphans) ;
+    		if [ $? -eq 0 ]; then
+    			IS_DOCKER_RUNNING=${arr_Filenames[DIR_OF_DOCKER]};
+		    echo "${GREEN}${arr_Filenames[DIR_OF_DOCKER]}${RESTORE} is up and running";
+		else
+		    echo "Some Error Occour Please Try again"
+		fi;
+    	else echo "${RED}Try Again!${RESTORE}" ;
+    	get_input ;
+    	fi;
+    else echo "${YELLOW}Ok, skipped!${RESTORE}";
+	fi;
+}
+
+restart_container() {
+STR=$'\n1 : Restart Container \n2 : Stop This Container \n3 : Start another container\nSelect above number or press any key to abort : ';
+    read -r -p "$STR" answer;
+    if [ "$answer" == 1 ] ;then
+    	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
+    	$($STOP_ALL_SERVICES)$(cd $DOCKER_DIR${arr_Filenames[DIR_OF_DOCKER]}; docker-compose up -d --remove-orphans) ;
+	echo "This ${RED}$IS_DOCKER_RUNNING${RESTORE} is restart";
+    fi;
+    if [ "$answer" == 2 ] ;then
+    	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
+		echo "Docker Container ${RED}$IS_DOCKER_RUNNING${RESTORE} is stoped";
+		echo "Now running lamp stack ${GREEN}apache2, mysql and php7.4-fpm${RESTORE}";
+		IS_DOCKER_RUNNING="";
+		lamp_services start;
+    fi;
+    if [ "$answer" == 3 ] ;then
+    	get_input;
+    else
+    	echo "${YELLOW}Ok, skipped!${RESTORE}";
+    fi;
+}
+
+get_db_ip() {
+	if [ "$IS_DOCKER_RUNNING" != "" ]
+	then
+
+		CONTAINER_ID_DB=$(docker container ls | awk '{ print $1, $2 }' | grep "db" | cut -d' ' -f1);
+
+		DB_IP_ADDRESS=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $CONTAINER_ID_DB);
+
+		echo "Databas Ip Address =  ${GREEN}$DB_IP_ADDRESS${RESTORE} ";
+	fi;
+}
+
+if [ "$IS_DOCKER_RUNNING" != "" ]
+then
+    restart_container;
+    get_db_ip;
+else
+	get_input;
+	# get_db_ip;
+fi;
