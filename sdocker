@@ -23,7 +23,7 @@ lamp_services() {
 
 IS_DOCKER_RUNNING="";
 
-DOCKER_DIR="www-docker/"
+DOCKER_DIR="/home/${USER}/www-docker/"
 LIST_ALL_DIR=`ls`;
 
 declare -a arr_Filenames=();
@@ -35,6 +35,11 @@ DOCKER_CONTAINER_NAMES=$(docker ps --format '{{.Names}}');
 DOCKER_CONTAINER_LAST=$(docker ps --format '{{.Names}}' --last 1);
 
 DOCKER_CONTAINER_DIR_NAME=$(docker ps --format '{{.Names}}' --last 1 | cut -f1 -d"_");
+
+if [[ "$DOCKER_CONTAINER_DIR_NAME" == "" ]]; then
+	DOCKER_CONTAINER_DIR_NAME=$(docker ps --format '{{.Names}}' --last 1 | cut -f1 -d"-");
+fi;	
+
 ACTIVE_DOCKER_CONTAINER="";
 
 
@@ -94,7 +99,7 @@ get_input() {
 }
 
 restart_container() {
-STR=$'\n1 : Restart Container \n2 : Stop This Container \n3 : Start another container\nSelect above number or press any key to abort : ';
+STR=$'\n1 : Restart Container \n2 : Stop This Container \n3 : Start another container\nSelect above number or press Enter to abort : ';
     read -r -p "$STR" answer;
     if [ "$answer" == 1 ] ;then
     	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
@@ -133,5 +138,5 @@ then
     get_db_ip;
 else
 	get_input;
-	# get_db_ip;
+	get_db_ip;
 fi;
