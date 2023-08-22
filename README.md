@@ -13,7 +13,7 @@ $ sudo sdocker
 ```
 Sample output
 ```text
-###when no docker container is running
+### when no docker container is running
 
 0 : container1 
 1 : container2
@@ -21,7 +21,7 @@ Sample output
 3 : container4
 Select Docker Container: 2
 
-###if you have already running any container then
+### if you have already running any container then
 
 0 : container1 
 1 : container2
