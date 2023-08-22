@@ -6,7 +6,7 @@ This Bash script for users who work with multple docker containers, make them ea
 
 ## Usage
 ```bash
-$ wget https://raw.githubusercontent.com/alirza143/switch-docker/main/sdocker
+$ wget https://raw.githubusercontent.com/alirza143/docker-switch/main/sdocker
 $ chmod +x ./sdocker
 $ sudo mv sdocker /usr/local/bin/sdocker
 $ sudo sdocker
