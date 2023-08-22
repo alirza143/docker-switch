@@ -6,14 +6,14 @@ This Bash script for users who work with multple docker containers, make them ea
 
 ## Usage
 ```bash
-$ wget https://raw.githubusercontent.com/alirza143/switch-docker/main/sdocker
+$ wget https://raw.githubusercontent.com/alirza143/docker-switch/main/sdocker
 $ chmod +x ./sdocker
 $ sudo mv sdocker /usr/local/bin/sdocker
 $ sudo sdocker
 ```
 Sample output
 ```text
-###when no docker container is running
+### when no docker container is running
 
 0 : container1 
 1 : container2
@@ -21,7 +21,7 @@ Sample output
 3 : container4
 Select Docker Container: 2
 
-###if you have already running any container then
+### if you have already running any container then
 
 0 : container1 
 1 : container2
