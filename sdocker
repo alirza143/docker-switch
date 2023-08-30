@@ -103,15 +103,17 @@ STR=$'\n1 : Restart Container \n2 : Stop This Container \n3 : Start another cont
     read -r -p "$STR" answer;
     if [ "$answer" == 1 ] ;then
     	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
-    	$($STOP_ALL_SERVICES)$(cd $DOCKER_DIR${arr_Filenames[DIR_OF_DOCKER]}; docker-compose up -d --remove-orphans) ;
-	echo "This ${RED}$IS_DOCKER_RUNNING${RESTORE} is restart";
+    	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose up -d --remove-orphans) ;
+	echo "Container ${GREEN}$IS_DOCKER_RUNNING${RESTORE} is restart";
     fi;
     if [ "$answer" == 2 ] ;then
     	$(cd $DOCKER_DIR$IS_DOCKER_RUNNING; docker-compose down) ;
 		echo "Docker Container ${RED}$IS_DOCKER_RUNNING${RESTORE} is stoped";
-		echo "Now running lamp stack ${GREEN}apache2, mysql and php7.4-fpm${RESTORE}";
-		IS_DOCKER_RUNNING="";
-		lamp_services start;
+		read -r -p "Do you want to start lamp services [y/N]:" answer;
+			if [ "$answer" != "${answer#[Yy]}" ] ;then
+			IS_DOCKER_RUNNING="";
+			lamp_services start;
+		fi;
     fi;
     if [ "$answer" == 3 ] ;then
     	get_input;
